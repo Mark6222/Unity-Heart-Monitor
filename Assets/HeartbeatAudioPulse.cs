@@ -13,6 +13,8 @@ public class HeartbeatAudioPulse : MonoBehaviour
     private Vector3 originalScale;
     private float lastBeatTime = 0f;
     private float[] audioSamples = new float[128];
+    private List<float> beatTimes = new List<float>(); // To track beat timestamps
+    private int maxBeatHistory = 5; // Number of beats to average for BPM
 
     public TextMeshProUGUI bpmText; // Assign in Inspector
 
@@ -35,11 +37,47 @@ public class HeartbeatAudioPulse : MonoBehaviour
         Debug.Log("Volume: " + volume);
         if (volume > beatThreshold && Time.time > lastBeatTime + cooldownTime)
         {
+            // Record beat time
+            beatTimes.Add(Time.time);
+
+            // Keep only recent beats
+            if (beatTimes.Count > maxBeatHistory)
+                beatTimes.RemoveAt(0);
+
+            // Calculate and update BPM
+            UpdateBPM();
+
             StartCoroutine(PulseHeart());
             lastBeatTime = Time.time;
         }
 
         heartObject.localScale = Vector3.Lerp(heartObject.localScale, originalScale, Time.deltaTime * scaleSpeed);
+    }
+
+    void UpdateBPM()
+    {
+        if (beatTimes.Count < 2)
+        {
+            // Not enough beats recorded yet
+            if (bpmText != null)
+                bpmText.text = "BPM: --";
+            return;
+        }
+
+        // Calculate average time between beats
+        float totalTime = 0;
+        for (int i = 1; i < beatTimes.Count; i++)
+        {
+            totalTime += beatTimes[i] - beatTimes[i - 1];
+        }
+        float averageTimeBetweenBeats = totalTime / (beatTimes.Count - 1);
+
+        // Calculate BPM
+        float bpm = 60f / averageTimeBetweenBeats;
+
+        // Update display
+        if (bpmText != null)
+            bpmText.text = "BPM: " + Mathf.RoundToInt(bpm);
     }
 
     IEnumerator PulseHeart()
@@ -51,29 +89,23 @@ public class HeartbeatAudioPulse : MonoBehaviour
         {
             t += Time.deltaTime * scaleSpeed;
             heartObject.localScale = Vector3.Lerp(originalScale, targetScale, t);
-            // Update the BPM text
-            if (bpmText != null)
-            {
-                float bpm = 60f / cooldownTime;
-                bpmText.text = "BPM: " + Mathf.RoundToInt(bpm);
-            }
             yield return null;
-
         }
 
         t = 0f;
         while (t < 1f)
         {
-
             t += Time.deltaTime * scaleSpeed;
             heartObject.localScale = Vector3.Lerp(targetScale, originalScale, t);
-            // Update the BPM text
-            if (bpmText != null)
-            {
-                float bpm = 60f / cooldownTime;
-                bpmText.text = "BPM: " + Mathf.RoundToInt(bpm);
-            }
             yield return null;
         }
     }
 }
+
+// void HandleAudioFrame(byte[] audioData, int sampleRate, int channels)
+// {
+//     float[] samples = ConvertToFloatArray(audioData);
+//     AudioClip clip = AudioClip.Create("HeartbeatLive", samples.Length, channels, sampleRate, false);
+//     clip.SetData(samples, 0);
+//     PlayLiveAudio(clip);
+// }
