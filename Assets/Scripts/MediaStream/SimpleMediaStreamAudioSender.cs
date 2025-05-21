@@ -25,7 +25,7 @@ public class SimpleMediaStreamAudioSender : MonoBehaviour {
         int port = serverPort == 0 ? 8080 : serverPort;
         clientId = gameObject.name;
 
-        ws = new WebSocket($"ws://{serverIp}:{port}/{nameof(SimpleDataChannelService)}");
+        ws = new WebSocket($"ws://{serverIp}:{port}");
         ws.OnMessage += (sender, e) => {
             var signalingMessage = new SignalingMessage(e.Data);
 

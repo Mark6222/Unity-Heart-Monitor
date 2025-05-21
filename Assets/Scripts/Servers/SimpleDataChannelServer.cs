@@ -21,6 +21,10 @@ public class SimpleDataChannelServer : MonoBehaviour {
         wssv = new WebSocketServer($"ws://{serverIpv4Address}:{serverPort}");
 
         wssv.AddWebSocketService<SimpleDataChannelService>($"/{nameof(SimpleDataChannelService)}");
+        ws.OnOpen += (sender, e) => Debug.Log("WebSocket opened!");
+        ws.OnError += (sender, e) => Debug.LogError($"WebSocket error: {e.Message}");
+        ws.OnClose += (sender, e) => Debug.Log("WebSocket closed.");
+
         //wssv.AddWebSocketService<MultiReceiverMediaChannelService>($"/{nameof(MultiReceiverMediaChannelService)}");
         //wssv.AddWebSocketService<VideoChatMediaStreamService>($"/{nameof(VideoChatMediaStreamService)}");
 
